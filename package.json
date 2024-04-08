@@ -1,6 +1,10 @@
 {
   "dependencies": {
+    "dotenv": "^16.4.5",
     "puppeteer-core": "^22.6.3"
+  },
+  "scripts": {
+    "dev": "node index.js"
   },
   "type": "module"
 }
