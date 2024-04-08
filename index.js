@@ -1,16 +1,15 @@
 import puppeteer from "puppeteer-core";
 import "dotenv/config";
+import jsonfile from "jsonfile";
+const file = "./prices.json";
 
 (async () => {
-  const path =
-    `C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe` ||
-    process.env.CH_PATH;
-  const dir =
-    `C:\Users\winn.tran\AppData\Local\Google\Chrome\User Data` ||
-    process.env.CH_DIR;
+  const path = process.env.CH_PATH;
+  const dir = process.env.CH_DIR;
   const profile = process.env.CH_PROFILE || "Default";
 
   if (!path || !dir) throw Error("Fill .env file");
+  console.log("Profile", profile);
 
   const delay = (time) => {
     return new Promise((resolve) => {
@@ -23,7 +22,7 @@ import "dotenv/config";
     headless: false,
     executablePath: path,
     userDataDir: dir,
-    args: [`--profile-directory=${profile}`, "--enable-extension-apps"],
+    args: [`--profile-directory=${profile}`],
     defaultViewport: { width: 1100, height: 700 },
   });
 
@@ -56,8 +55,7 @@ import "dotenv/config";
   const questItem = [];
 
   async function setQuestItem(_newItem) {
-    questItem.length = 0;
-    questItem.concat(_newItem);
+    questItem.push(..._newItem);
   }
   await page.exposeFunction("setQuestItem", setQuestItem);
 
@@ -95,6 +93,7 @@ import "dotenv/config";
   });
 
   const orderAction = async () => {
+    questItem.length = 0;
     // go to task board
     console.log(
       "------------------------ Task Board --------------------------------"
@@ -106,6 +105,14 @@ import "dotenv/config";
 
     await page.mouse.click(770, 623);
     await delay(1000);
+
+    let _json;
+    let limit;
+    jsonfile.readFile(file, function (err, obj) {
+      if (err) console.error(err);
+      _json = obj;
+      limit = obj.limit;
+    });
 
     console.log("Finding task board....");
     await page.waitForSelector(searchStoreBoxSelector, {
@@ -131,16 +138,47 @@ import "dotenv/config";
         .forEach((item) => {
           const title = item.childNodes[3].childNodes[0].innerText;
           const quantity = Number(item.childNodes[2].innerText.substring(1));
-          const itemId = item.childNodes[1].innerHTML.split("/")[5];
-          items.push({ title, quantity, itemId });
+          const btn = item.childNodes[3].childNodes[1];
+          const disabled = btn.disabled;
+          const label = btn.innerText;
+          items.push({ title, quantity, disabled, label });
         });
       await setQuestItem(items);
-      console.log("-------Items in quest");
-      console.table(items);
       console.log(
         "-------Items in quest----------------------------------------------------------"
       );
     });
+
+    const market = _json.market || [];
+    const available = [];
+    questItem.forEach((i) => {
+      const itemMarket = market.find((im) => im.title == i.title);
+      if (itemMarket) {
+        const total = i.quantity * itemMarket.price;
+        if (total < limit && i.disabled == true && i.label == "DELIVER") {
+          available.push({ ...i, price: itemMarket.price, total });
+        }
+      }
+    });
+
+    console.table(available);
+
+    if (
+      JSON.stringify(_json.available) != JSON.stringify(available) ||
+      JSON.stringify(_json.orders) != JSON.stringify(questItem)
+    ) {
+      _json.orders = [...questItem];
+      _json.available = [...available];
+      jsonfile.writeFile(
+        file,
+        _json,
+        { spaces: 2, EOL: "\r\n" },
+        function (err) {
+          console.log("write json");
+          if (err) console.error(err);
+        }
+      );
+    } else console.log("Not change json");
 
     await delay(500);
 
@@ -161,6 +199,57 @@ import "dotenv/config";
 
     await page.mouse.click(886, 282);
     await delay(1000);
+
+    const success = [];
+    let index = 0;
+    while (success.length < available.length) {
+      const title = available[index].title;
+      await page.waitForSelector('input[class*=Marketplace_filter]', {
+        timeout: 60000,
+        signal: controller.signal,
+      });
+      await page.evaluate(() => document.querySelector("input[class*=Marketplace_filter]").value = "");
+      console.log('clear');
+      await page.type("input[class*=Marketplace_filter]", title);
+      console.log('enter');
+      await page.waitForSelector('div[class*=Marketplace_itemName]', {
+        timeout: 60000,
+        signal: controller.signal,
+      });
+
+      const itemSelected = await page.evaluate((availableItem) => {
+        let selected;
+        document
+          .querySelectorAll(
+            "div[class*=Marketplace_items] > div[class*=Marketplace_item]"
+          )
+          .forEach((i, key) => {
+            const text = i.childNodes[1].innerText;
+            console.log(text, availableItem.title)
+            if (text == availableItem.title) {
+              selected = key;
+            }
+          });
+
+        return Promise.resolve(selected);
+      }, available[index]);
+      console.log("itemSelected", itemSelected)
+      if (!itemSelected) continue;
+
+      await delay(100);
+
+      await page.click(`div[class*="Marketplace_items"] > div[class*="Marketplace_item"]:nth-child(${itemSelected})`);
+
+      await delay(200);
+      await page.waitForSelector('button[class*="commons_closeBtn"]', {
+        timeout: 60000,
+        signal: controller.signal,
+      });
+      await page.click('button[class*="commons_closeBtn"]');
+    }
+
+    await delay(500);
+    console.log('done ------------')
     await page.waitForSelector(closeSelector, {
       timeout: 60000,
       signal: controller.signal,
@@ -205,7 +294,7 @@ import "dotenv/config";
           await delay(100);
       }
     } catch (error) {
-      console.log("_____ Action: ACTION ABORTED");
+      console.log("_____ Action: ACTION ABORTED", error);
     }
     await delay(1000);
   }
