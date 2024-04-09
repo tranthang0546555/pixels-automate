@@ -1,6 +1,7 @@
 import puppeteer from "puppeteer-core";
 import "dotenv/config";
 import jsonfile from "jsonfile";
+import { setMaxListeners } from "events";
 const file = "./prices.json";
 
 (async () => {
@@ -52,13 +53,9 @@ const file = "./prices.json";
   await delay(10000);
 
   let controller = new AbortController();
+  // setMaxListeners(15, controller.signal);
   const questItem = [];
-
-  async function setQuestItem(_newItem) {
-    questItem.push(..._newItem);
-  }
-  await page.exposeFunction("setQuestItem", setQuestItem);
-
+  const available = [];
   let auto = 10;
 
   async function setAuto(_num) {
@@ -66,6 +63,7 @@ const file = "./prices.json";
     controller.abort();
     await delay(100);
     controller = new AbortController();
+    // setMaxListeners(15, controller.signal);
   }
   await page.exposeFunction("setAuto", setAuto);
 
@@ -94,6 +92,7 @@ const file = "./prices.json";
 
   const orderAction = async () => {
     questItem.length = 0;
+    available.length = 0;
     // go to task board
     console.log(
       "------------------------ Task Board --------------------------------"
@@ -120,16 +119,20 @@ const file = "./prices.json";
       signal: controller.signal,
     });
 
-    const buySelector = 'button[class*="Store_buyButton"]:last-child';
-
+    const orderSelector = 'button[class*="Store_buyButton"]:last-child';
     console.log("Click buy...");
-    await page.waitForSelector(buySelector, {
+    await page.waitForSelector(orderSelector, {
       timeout: 60000,
       signal: controller.signal,
     });
-    await page.click(buySelector);
+    await page.click(orderSelector);
 
-    await page.evaluate(async () => {
+    await page.waitForSelector("div[class*=Store_card-content-wrapper]", {
+      timeout: 60000,
+      signal: controller.signal,
+    });
+
+    const _questItem = await page.evaluate(async () => {
       const items = [];
       document
         .querySelectorAll(
@@ -143,14 +146,13 @@ const file = "./prices.json";
           const label = btn.innerText;
           items.push({ title, quantity, disabled, label });
         });
-      await setQuestItem(items);
-      console.log(
-        "-------Items in quest----------------------------------------------------------"
-      );
+      return items;
     });
 
+    questItem.push(..._questItem);
+
     const market = _json.market || [];
-    const available = [];
+
     questItem.forEach((i) => {
       const itemMarket = market.find((im) => im.title == i.title);
       if (itemMarket) {
@@ -160,8 +162,6 @@ const file = "./prices.json";
         }
       }
     });
-
-    console.table(available);
 
     if (
       JSON.stringify(_json.available) != JSON.stringify(available) ||
@@ -179,81 +179,181 @@ const file = "./prices.json";
         }
       );
     } else console.log("Not change json");
-
-    await delay(500);
-
+    console.table(available);
     console.log("Click close...");
     const closeSelector = 'button[class*="commons_closeBtn"]';
     await page.waitForSelector(closeSelector, {
       timeout: 60000,
       signal: controller.signal,
     });
+    auto = 0;
     await page.click(closeSelector);
+  };
 
+  const buyAction = async () => {
     console.log(
       "------------------------ Go to Market --------------------------------"
     );
+    console.table(available);
     await page.keyboard.down("w");
     await delay(4000);
     await page.keyboard.up("w");
 
-    await page.mouse.click(886, 282);
-    await delay(1000);
-
     const success = [];
     let index = 0;
+    let debugIndex = 0;
     while (success.length < available.length) {
       const title = available[index].title;
-      await page.waitForSelector('input[class*=Marketplace_filter]', {
+      console.log(
+        "Buying -------------------- item: ",
+        index,
+        " : ",
+        title,
+        " :: ",
+        debugIndex
+      );
+      await page.mouse.click(886, 282);
+      await page.waitForSelector("input[class*=Marketplace_filter]", {
         timeout: 60000,
         signal: controller.signal,
       });
-      await page.evaluate(() => document.querySelector("input[class*=Marketplace_filter]").value = "");
-      console.log('clear');
+      await page.evaluate(
+        () =>
+          (document.querySelector("input[class*=Marketplace_filter]").value =
+            "")
+      );
+      console.log("clear");
       await page.type("input[class*=Marketplace_filter]", title);
-      console.log('enter');
-      await page.waitForSelector('div[class*=Marketplace_itemName]', {
+      console.log("enter");
+      await page.waitForSelector("div[class*=Marketplace_itemName]", {
         timeout: 60000,
         signal: controller.signal,
       });
 
-      const itemSelected = await page.evaluate((availableItem) => {
-        let selected;
-        document
-          .querySelectorAll(
-            "div[class*=Marketplace_items] > div[class*=Marketplace_item]"
-          )
-          .forEach((i, key) => {
-            const text = i.childNodes[1].innerText;
-            console.log(text, availableItem.title)
-            if (text == availableItem.title) {
-              selected = key;
-            }
+      const itemSelect = async () => {
+        await page.evaluate((availableItem) => {
+          let selected;
+          document
+            .querySelectorAll(
+              "div[class*=Marketplace_items] > div[class*=Marketplace_item]"
+            )
+            .forEach((i, key) => {
+              const text = i.childNodes[1].innerText;
+              console.log(text, availableItem.title);
+              if (text == availableItem.title) {
+                selected = key;
+              }
+            });
+
+          document
+            .querySelectorAll(`div[class*="Marketplace_items"] button`)[selected].click();
+        }, available[index]);
+      };
+
+      let quantity = 0;
+      const itemQuant = available[index].quantity;
+      while (quantity < itemQuant) {
+        if ((auto = 0)) break;
+        console.log(`quantity: ${quantity} / ${itemQuant}`);
+        await itemSelect();
+        await page.waitForSelector(
+          "div[class*=MarketplaceItemListings_listing] button[class*=commons_pushbutton]:not([disabled])",
+          {
+            timeout: 60000,
+            signal: controller.signal,
+          }
+        );
+        await delay(200);
+
+        const itemIndex = await page.evaluate((remain) => {
+          let quantityLarge = 0;
+          let quantityLargeIndex = 0;
+          document
+            .querySelectorAll(
+              "div[class*=MarketplaceItemListings_listing] button[class*=commons_pushbutton]:not([disabled])"
+            )
+            .forEach((item, idx) => {
+              const count = Number(item.innerText.split(" ")[1]);
+              if (count > quantityLarge) {
+                quantityLargeIndex = idx;
+                quantityLarge = count;
+              }
+            });
+          if (quantityLarge >= remain * 2)
+            return Promise.resolve(quantityLargeIndex);
+          else return Promise.resolve(-1);
+        }, itemQuant);
+        
+        if (itemIndex > 0) {
+          await page.evaluate(() => {
+            document
+              .querySelectorAll(
+                "div[class*=MarketplaceItemListings_listing] button[class*=commons_pushbutton]:not([disabled])"
+              )[0]
+              .click();
           });
 
-        return Promise.resolve(selected);
-      }, available[index]);
-      console.log("itemSelected", itemSelected)
-      if (!itemSelected) continue;
 
-      await delay(100);
+          await page.waitForSelector('div[class*=MarketplaceItemListings_amount] input', {
+            timeout: 60000,
+            signal: controller.signal,
+          });
+          await page.evaluate(
+            () =>
+              (document.querySelector('div[class*=MarketplaceItemListings_amount] input').value =
+                "")
+          );
+          console.log("clear");
+          await delay(100);
+          await page.type('div[class*=MarketplaceItemListings_amount] input', String(itemQuant));
+          console.log("enter :", itemQuant);
+          await page.click('div[class*=MarketplaceItemListings_buttons] button:first-child', {
+            timeout: 60000,
+            signal: controller.signal,
+          })
 
-      await page.click(`div[class*="Marketplace_items"] > div[class*="Marketplace_item"]:nth-child(${itemSelected})`);
+          await page.waitForSelector('div[class*=Notifications_textContainer] span');
 
-      await delay(200);
-      await page.waitForSelector('button[class*="commons_closeBtn"]', {
-        timeout: 60000,
-        signal: controller.signal,
-      });
-      await page.click('button[class*="commons_closeBtn"]');
+          const status = await page.evaluate(()=>{
+            const noti = document.querySelector('div[class*=Notifications_textContainer] span').innerText;
+            if(noti == 'marketplace-purchase-failed') return Promise.resolve(0);
+            else return Promise.resolve(1);
+          })
+
+          console.log("Status buy: " + status == 1 ? "success" : "failed");
+          if(status == 1) {
+            quantity = itemQuant;
+            await page.waitForSelector('div[class*=Marketplace_buyContent] button',
+            {
+              timeout: 60000,
+              signal: controller.signal,
+            });
+            await page.click('div[class*=Marketplace_buyContent] button');
+          }
+        }
+
+        console.log("close item panel");
+        const closePanel = async () => {
+          await page.evaluate(() => {
+            document
+              .querySelectorAll('button[class*="commons_closeBtn"]')[1]
+              .click();
+          });
+        };
+        await closePanel();
+      }
+      success.push(available[index]);
+      index++;
+      debugIndex++;
     }
 
     await delay(500);
-    console.log('done ------------')
+    console.log("done ------------");
     await page.waitForSelector(closeSelector, {
       timeout: 60000,
       signal: controller.signal,
     });
+    auto = 0;
     await page.click(closeSelector);
   };
 
@@ -266,11 +366,14 @@ const file = "./prices.json";
       <input type="radio" class="op" id="option1" name="options" value="1" onchange="document.myFunction(1)">
       <label for="option1">Order in task board</label><br>
       
-      <input type="radio"  class="op" id="option2" name="options" value="2" onchange="document.myFunction(2)">
-      <label for="option2">Craft</label><br>
-      
+      <input type="radio" class="op" id="option2" name="options" value="2" onchange="document.myFunction(2)">
+      <label for="option2">Buy items</label><br>
+
       <input type="radio" class="op" id="option3" name="options" value="3" onchange="document.myFunction(3)">
-      <label for="option3">Nothing</label><br>
+      <label for="option3">Both</label><br>
+
+      <input type="radio"  class="op" id="option4" name="options" value="4" onchange="document.myFunction(4)">
+      <label for="option4">Craft</label><br>
       </div>
       `;
       if (!element) container.insertAdjacentHTML("beforeend", html);
@@ -287,6 +390,14 @@ const file = "./prices.json";
         case 1:
           await orderAction();
           break;
+        case 2:
+          await buyAction();
+          break;
+        case 3: {
+          await orderAction();
+          await buyAction();
+          break;
+        }
         case 10:
           await closeBoard();
           break;
