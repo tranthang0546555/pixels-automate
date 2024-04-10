@@ -410,3 +410,164 @@ const file = "./prices.json";
     await delay(1000);
   }
 })();
+
+
+`
+Egg
+Seltsam Egg
+Eggsplosive
+Honey
+Wax
+Queen Bee
+Heartbeet
+Java Bean
+Popberry
+Bluzzleberry Swirl Cotton Candy
+Razzleberry Cotton Candy
+Bluzberry Cotton Candy
+Orange Grumpkin
+Butterberry
+4 Leaf Clover
+Clover
+Grainbow
+Grumpkin
+Watermint
+Scarrot
+Astracactus
+Hotato
+Muckchuck
+Softwood
+Hardwood
+Sap
+Ironite
+Clay
+Salt Block
+Voidtonium
+Silk Fiber
+Silk Slug Slime
+Silk Slug Spider
+Ironite Bar
+Brick
+Brick
+Glue
+Ironite Bar
+Fireplace
+Bomb Shell
+Glue
+Clearshell
+Statue Fountain
+Triple Fountain
+Waterland Statue
+Clearshell
+Trash Can
+Hotato Hashbrowns
+Plain Omelet
+Popberry Pie
+Cookie Man Ornament
+Pancakes
+Popberry Loaf
+Grumpkin Pie
+Grumpkin Loaf
+Scarrot Pie
+Scarrot Loaf
+Hot Sauce
+Traditional BBQ Sauce
+Tangy BBQ Sauce
+Hardwood Smoked BBQ Sauce
+Honey BBQ Sauce
+Spicy BBQ Sauce
+Starry Salt-Encrusted Grumpkin Skewers
+Starry Grilled Hotato Kielbasa
+Starry Butterberry Brisket
+Starry Maple-Glazed Popberry Slabs
+Moist Broiled Muckchuck Burgers
+Moist Honey-Kissed Grumpkin Chops
+Starry Honey-Kissed Scarrot Chops
+Moist Scarrot and Butterberry Kebabs
+Moist Maple-Glazed Scarrot Slabs
+Moist Salt-Encrusted Popberry Skewers
+Dry Pulled Muckchuck Platter
+Dry Maple-Glazed Grumpkin Slabs
+Dry Baby Back Butterberry Ribs
+Dry Salt-Encrusted Scarrot Skewers
+Dry Honey-Kissed Popberry Chops
+MooMunch
+Flour
+Java Pod
+Shrapnel
+Construction Powder
+Flour
+Shrapnel
+Paving Stones, Limestone
+Construction Powder
+4-Leaf Cloveregano
+Fertilizer
+Pet Treat
+Pet Treat
+Pet Treat
+Hotato Seeds
+Silk Rope
+Not Ugly Christmas Sweater
+Silk Cloth
+Construction Cone
+Small Purple Rug
+Plaster
+Silk Rope
+Silk Cloth
+Turquoise Couch
+Plaster
+Green Tent
+Bone Hut 2
+Astra Chair
+Popberry Wine
+Shorelimeade
+Heartbeet Wine
+Candy Cane Eggnog Macchiato
+Grumpkin Spiced Latte
+Cotton Candy Milkshake
+Grumpkin Spiced Latte
+Grainshine
+Hotka
+Popberry Wine
+Butterbrew
+Butterbrew
+Grumpkin Wine
+Watermint Whisky
+Astracactus Tequila
+Astracactus Tequila
+Hotka
+Grainshine
+Scarrot Wine
+Scarrot Wine
+Grumpkin Wine
+Muckchuck Mead
+Watermint Whisky
+Muckchuck Mead
+Wooden Stool
+Stick
+Log Decoration
+Plank
+Barrel of Red
+Barrel of Tools
+Empty Barrel
+Barrel of Purple
+Plank
+6 Slot Storage Chest
+Wooden Beam
+Wooden Throne
+Wooden Bench
+Stick
+Archery
+Scarecrow
+Fireplace Pot
+Wooden Beam
+Barn
+Barney's BarnBQ Kit
+Growth Lab Kit
+Woodworking Bench Kit
+Silk Slug Hutch Kit
+Mine Kit
+Kiln Kit
+Textile Mill Kit
+RoninChain
+`;
