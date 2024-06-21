@@ -1,4 +1,11 @@
 import puppeteer from "puppeteer-core";
+// Zoom: 100%
+// Get path + dir from chrome://version/
+// profile-name: Default
+// stove1 axis
+// start: step -> open terminal -> node cook.js
+// Press " ` " key to open panel
+// Stop -> press Esc
 
 (async () => {
   const path = `C:\\Users\\winn.tran\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application\\brave.exe`;
@@ -7,15 +14,13 @@ import puppeteer from "puppeteer-core";
   const profile = "Default";
   const stove1 = { x: 238, y: 217 };
   const stove2 = { x: 308, y: 247 };
+  const loop = 2; // 4 stove = 2 loop ex: 10 stove -> loop = 5
 
   const delay = (time) => {
     return new Promise((resolve) => {
       setTimeout(resolve, time);
     });
   };
-
-  let latestFire = Date.now();
-  let isFired = false;
 
   // Launch the browser and open a new blank page
   const browser = await puppeteer.launch({
@@ -102,18 +107,12 @@ import puppeteer from "puppeteer-core";
 
   const cookAction = async () => {
     console.log("Cooking started ----------");
-    const loop = 2;
     for (let i = 1; i <= loop; i++) {
       await move();
-      if (!isFired) {
-        await fire();
-        latestFire = Date.now();
-      }
       await delay(1000);
       await openStove(stove1);
       await openStove(stove2);
     }
-    isFired = Date.now() - latestFire > 5 * 60 * 1000 ? true : false;
     await back();
   };
 
@@ -136,7 +135,7 @@ import puppeteer from "puppeteer-core";
     await page.keyboard.up("s");
 
     await page.keyboard.down("a");
-    await delay(5000);
+    await delay(1500 * loop);
     await page.keyboard.up("a");
   };
 
@@ -156,6 +155,12 @@ import puppeteer from "puppeteer-core";
 
   const openStove = async (axis = stove1) => {
     console.log("Clicked on Stove");
+    await page.mouse.click(axis.x, axis.y, {
+      count: 2,
+      button: "left",
+      delay: 50,
+    });
+    await delay(2000);
     await page.mouse.click(axis.x, axis.y, {
       count: 2,
       button: "left",
