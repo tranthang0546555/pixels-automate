@@ -120,12 +120,12 @@ import puppeteer from "puppeteer-core";
 
   const move = async () => {
     await page.keyboard.down("s");
-    await delay(1000);
+    await delay(500);
     await page.keyboard.up("s");
 
     await page.keyboard.down("w");
     await page.keyboard.down("d");
-    await delay(2500);
+    await delay(2000);
     await page.keyboard.up("w");
     await page.keyboard.up("d");
   };
