@@ -113,7 +113,7 @@ import puppeteer from "puppeteer-core";
       await openStove(stove1);
       await openStove(stove2);
     }
-    isFired = Date.now() - latestFire > 3 * 60 * 1000 ? true : false;
+    isFired = Date.now() - latestFire > 5 * 60 * 1000 ? true : false;
     await back();
   };
 
@@ -145,18 +145,10 @@ import puppeteer from "puppeteer-core";
     await delay(100);
     await page.keyboard.up("3");
     await delay(500);
-    await page.mouse.click(stove1.x, stove1.y, {
-      count: 1,
-      button: "left",
-      delay: 500,
-    });
-
-    await page.mouse.click(stove2.x, stove2.y, {
-      count: 1,
-      button: "left",
-      delay: 500,
-    });
-
+    await page.mouse.click(stove1.x, stove1.y);
+    await delay(500);
+    await page.mouse.click(stove2.x, stove2.y);
+    await delay(500);
     await page.keyboard.down("3");
     await delay(200);
     await page.keyboard.up("3");

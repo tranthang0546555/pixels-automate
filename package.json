@@ -4,8 +4,7 @@
     "puppeteer-core": "^22.6.3"
   },
   "scripts": {
-    "dev": "node index.js",
-    "crawl": "node crawl.js"
+    "dev": "node cook.js"
   },
   "type": "module"
 }
