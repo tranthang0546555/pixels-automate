@@ -10,11 +10,12 @@ import puppeteer from "puppeteer-core";
 (async () => {
   const path = `C:\\Users\\winn.tran\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application\\brave.exe`;
   const dir = `C:\\Users\\winn.tran\\AppData\\Local\\BraveSoftware\\Brave-Browser\\User Data`;
-  const cakeName = `Grumpkin Loaf`;
+  const cakeName = `Blue Grumpkin Puree`;
   const profile = "Default";
-  const stove1 = { x: 238, y: 217 };
-  const stove2 = { x: 308, y: 247 };
-  const loop = 2; // 4 stove = 2 loop ex: 10 stove -> loop = 5
+  const stove1 = { x: 585, y: 335 };
+  const stove2 = { x: 716, y: 354 };
+  const loop = 4; // 4 stove = 2 loop ex: 10 stove -> loop = 5
+  const timeDelay = 3 * 60 * 1000;
 
   const delay = (time) => {
     return new Promise((resolve) => {
@@ -28,7 +29,7 @@ import puppeteer from "puppeteer-core";
     executablePath: path,
     userDataDir: dir,
     args: [`--profile-directory=${profile}`],
-    defaultViewport: { width: 500, height: 500 },
+    defaultViewport: { width: 1200, height: 800 },
   });
 
   const page = await browser.newPage();
@@ -114,6 +115,7 @@ import puppeteer from "puppeteer-core";
       await openStove(stove2);
     }
     await back();
+    await delay(timeDelay);
   };
 
   const move = async () => {
