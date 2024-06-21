@@ -133,7 +133,7 @@ import puppeteer from "puppeteer-core";
   const back = async () => {
     console.log("Go back----------");
     await page.keyboard.down("s");
-    await delay(1000);
+    await delay(500);
     await page.keyboard.up("s");
 
     await page.keyboard.down("a");
