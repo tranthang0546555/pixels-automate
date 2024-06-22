@@ -14,14 +14,9 @@ import puppeteer from "puppeteer-core";
   const profile = "Default";
   const stove1 = { x: 585, y: 335 };
   const stove2 = { x: 716, y: 354 };
-  const loop = 4; // 4 stove = 2 loop ex: 10 stove -> loop = 5
-  const timeDelay = 3 * 60 * 1000;
-
-  const delay = (time) => {
-    return new Promise((resolve) => {
-      setTimeout(resolve, time);
-    });
-  };
+  const loop = 7; // 4 stove = 2 loop ex: 10 stove -> loop = 5
+  const timeDelay = 2 * 60 * 1000;
+  const isDrink = false;
 
   // Launch the browser and open a new blank page
   const browser = await puppeteer.launch({
@@ -30,12 +25,46 @@ import puppeteer from "puppeteer-core";
     userDataDir: dir,
     args: [`--profile-directory=${profile}`],
     defaultViewport: { width: 1200, height: 800 },
+    ignoreDefaultArgs: ["--disable-extensions", "--enable-automation"],
   });
 
   const page = await browser.newPage();
 
   // Navigate the page to a URL
   await page.goto("https://play.pixels.xyz/");
+
+  const delay = async (time) => {
+    try {
+      return page.evaluate((delayTime) => {
+        return new Promise((resolve, reject) => {
+          const timeoutId = setTimeout(() => {
+            resolve();
+            window.removeEventListener("keyup", onKeydown);
+          }, delayTime);
+
+          const onKeydown = (event) => {
+            try {
+              if (event.key === "Escape") {
+                if (timeoutId) {
+                  clearTimeout(timeoutId);
+                  reject();
+                  window.removeEventListener("keyup", onKeydown);
+                  console.log("_______Abort delay timeout________");
+                }
+              }
+            } catch (error) {
+              console.error(error);
+            }
+          };
+          if (!timeoutId) {
+            window.addEventListener("keyup", onKeydown);
+          }
+        });
+      }, time);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   // Wait and select world
   const searchWorldsSelector = 'div[class*="clickable Intro_smalllink"]';
@@ -120,7 +149,7 @@ import puppeteer from "puppeteer-core";
 
   const move = async () => {
     await page.keyboard.down("s");
-    await delay(500);
+    await delay(250);
     await page.keyboard.up("s");
 
     await page.keyboard.down("w");
@@ -133,7 +162,7 @@ import puppeteer from "puppeteer-core";
   const back = async () => {
     console.log("Go back----------");
     await page.keyboard.down("s");
-    await delay(500);
+    await delay(250);
     await page.keyboard.up("s");
 
     await page.keyboard.down("a");
@@ -168,7 +197,12 @@ import puppeteer from "puppeteer-core";
       button: "left",
       delay: 50,
     });
-    await delay(2000);
+    await page.waitForSelector('span[class^="Crafting_craftingFontText"]', {
+      timeout: 5000,
+      signal: controller.signal,
+    });
+    await delay(500);
+
     const itemSelect = async () => {
       await page.evaluate((cakeName) => {
         document
@@ -184,10 +218,17 @@ import puppeteer from "puppeteer-core";
       }, cakeName);
     };
     await itemSelect();
-    await delay(1500);
+    await page.waitForSelector(
+      'button[class*="Crafting_craftingButton"]:not([disabled])',
+      {
+        timeout: 3000,
+        signal: controller.signal,
+      }
+    );
+    await delay(500);
     console.log("Create button clicked");
     await page.click('button[class*="Crafting_craftingButton"]');
-    await delay(2000);
+    await delay(500);
     console.log("Receive button clicked");
     await page.click('button[class*="Crafting_craftingButton"]');
     await page.click("button[class^=Crafting_craftingCloseButton]");
