@@ -138,10 +138,12 @@ import puppeteer from "puppeteer-core";
   const cookAction = async () => {
     console.log("Cooking started ----------");
     for (let i = 1; i <= loop; i++) {
-      await move();
-      await delay(1000);
-      await openStove(stove1);
-      await openStove(stove2);
+      try {
+        await move();
+        await delay(1000);
+        await openStove(stove1);
+        await openStove(stove2);
+      } catch (error) {}
     }
     await back();
     await delay(timeDelay);
@@ -218,13 +220,15 @@ import puppeteer from "puppeteer-core";
       }, cakeName);
     };
     await itemSelect();
-    await page.waitForSelector(
-      'button[class*="Crafting_craftingButton"]:not([disabled])',
-      {
-        timeout: 3000,
-        signal: controller.signal,
-      }
-    );
+    try {
+      await page.waitForSelector(
+        'button[class*="Crafting_craftingButton"]:not([disabled])',
+        {
+          timeout: 3000,
+          signal: controller.signal,
+        }
+      );
+    } catch (error) {}
     await delay(500);
     console.log("Create button clicked");
     await page.click('button[class*="Crafting_craftingButton"]');
