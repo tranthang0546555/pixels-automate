@@ -36,7 +36,7 @@ async function delayWithAbort(delayInMs, controller, message) {
   // const profile = "Profile 1";
   const stove1 = { x: 585, y: 335 };
   const stove2 = { x: 716, y: 354 };
-  const self = { x: 610, y: 371 };
+  const self = { x: 610, y: 385 };
   const loop = 7; // 4 stove = 2 loop ex: 10 stove -> loop = 5
   const timeDelay = 2 * 60 * 1000;
   const isFireAuto = true; // Wood num 3
