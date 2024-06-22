@@ -12,6 +12,7 @@ import puppeteer from "puppeteer-core";
   const dir = `C:\\Users\\winn.tran\\AppData\\Local\\BraveSoftware\\Brave-Browser\\User Data`;
   const cakeName = `Blue Grumpkin Puree`;
   const profile = "Default";
+  // const profile = "Profile 1";
   const stove1 = { x: 585, y: 335 };
   const stove2 = { x: 716, y: 354 };
   const loop = 7; // 4 stove = 2 loop ex: 10 stove -> loop = 5
@@ -38,8 +39,8 @@ import puppeteer from "puppeteer-core";
       return page.evaluate((delayTime) => {
         return new Promise((resolve, reject) => {
           const timeoutId = setTimeout(() => {
+            document.removeEventListener("keyup", onKeydown);
             resolve();
-            window.removeEventListener("keyup", onKeydown);
           }, delayTime);
 
           const onKeydown = (event) => {
@@ -47,8 +48,8 @@ import puppeteer from "puppeteer-core";
               if (event.key === "Escape") {
                 if (timeoutId) {
                   clearTimeout(timeoutId);
+                  document.removeEventListener("keyup", onKeydown);
                   reject();
-                  window.removeEventListener("keyup", onKeydown);
                   console.log("_______Abort delay timeout________");
                 }
               }
@@ -57,7 +58,7 @@ import puppeteer from "puppeteer-core";
             }
           };
           if (!timeoutId) {
-            window.addEventListener("keyup", onKeydown);
+            document.addEventListener("keyup", onKeydown);
           }
         });
       }, time);
