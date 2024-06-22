@@ -224,7 +224,7 @@ import puppeteer from "puppeteer-core";
       await page.waitForSelector(
         'button[class*="Crafting_craftingButton"]:not([disabled])',
         {
-          timeout: 3000,
+          timeout: 5000,
           signal: controller.signal,
         }
       );
