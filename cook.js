@@ -36,9 +36,11 @@ async function delayWithAbort(delayInMs, controller, message) {
   // const profile = "Profile 1";
   const stove1 = { x: 585, y: 335 };
   const stove2 = { x: 716, y: 354 };
+  const self = { x: 610, y: 371 };
   const loop = 7; // 4 stove = 2 loop ex: 10 stove -> loop = 5
   const timeDelay = 2 * 60 * 1000;
-  const isDrink = false;
+  const isFireAuto = true; // Wood num 3
+  const isDrinkAuto = true; // Drink num 4
 
   // Launch the browser and open a new blank page
   const browser = await puppeteer.launch({
@@ -135,25 +137,57 @@ async function delayWithAbort(delayInMs, controller, message) {
 
   const cookAction = async () => {
     console.log("Cooking started ----------");
+    if (isDrinkAuto) await drink();
     for (let i = 1; i <= loop; i++) {
-      await move();
+      console.log("========== Loop = " + i);
+      await move(i == 1);
       if (auto == 10) break;
       await delay(1000);
       if (auto == 10) break;
+      console.log("Stove 1");
       await openStove(stove1);
       if (auto == 10) break;
+      console.log("Stove 2");
       await openStove(stove2);
       if (auto == 10) break;
     }
+    try {
+      await page.click("button[class^=Crafting_craftingCloseButton]");
+      await page.click("button[class^=InventoryWindow_closeBtn]");
+    } catch (error) {}
+
     await back();
     // await delay(timeDelay);
     await delayWithController(timeDelay, controller, "timeDelay:" + timeDelay);
   };
 
-  const move = async () => {
-    await page.keyboard.down("s");
-    await delay(250);
-    await page.keyboard.up("s");
+  const drink = async () => {
+    const isLess = await page.evaluate(() => {
+      const e = document.querySelector("span[class*=Hud_energytext]").innerHTML;
+      const r = Number(e || "") < 200;
+      return Promise.resolve(r);
+    });
+    console.log("En < 200 :: ", isLess);
+    if (isLess) {
+      await delay(1000);
+      console.log("drink");
+      await page.keyboard.down("4");
+      await page.keyboard.up("4");
+      await delay(1000);
+      await page.mouse.click(self.x, self.y);
+      await page.keyboard.down("4");
+      await page.keyboard.up("4");
+      console.log("drink done");
+      await delay(2000);
+    }
+  };
+
+  const move = async (init = false) => {
+    if (!init) {
+      await page.keyboard.down("s");
+      await delay(200);
+      await page.keyboard.up("s");
+    }
 
     await page.keyboard.down("w");
     await page.keyboard.down("d");
@@ -170,22 +204,26 @@ async function delayWithAbort(delayInMs, controller, message) {
 
     await page.keyboard.down("a");
     // await delay(1500 * loop);
-    await delayWithController(1500 * loop, controller, "Go back");
+    await delayWithController(2000 * loop, controller, "Go back");
     await page.keyboard.up("a");
   };
 
-  const fire = async () => {
+  const fire = async (stove = stove1) => {
+    console.log("add wood");
     await page.keyboard.down("3");
-    await delay(100);
     await page.keyboard.up("3");
     await delay(500);
-    await page.mouse.click(stove1.x, stove1.y);
-    await delay(500);
-    await page.mouse.click(stove2.x, stove2.y);
-    await delay(500);
+    await page.mouse.click(stove.x, stove.y);
     await page.keyboard.down("3");
-    await delay(200);
     await page.keyboard.up("3");
+    console.log("add wood done");
+    await delay(1000);
+    console.log("Open stove after add wood done");
+    await page.mouse.click(stove.x, stove.y, {
+      count: 2,
+      button: "left",
+      delay: 50,
+    });
   };
 
   const openStove = async (axis = stove1) => {
@@ -201,9 +239,17 @@ async function delayWithAbort(delayInMs, controller, message) {
       button: "left",
       delay: 50,
     });
-    await page.waitForSelector('span[class^="Crafting_craftingFontText"]', {
-      timeout: 5000,
-    });
+
+    try {
+      await page.waitForSelector('span[class^="Crafting_craftingFontText"]', {
+        timeout: 5000,
+        visible: true,
+        hidden: true,
+      });
+    } catch (error) {
+      if (isFireAuto) await fire(axis);
+    }
+
     await delay(500);
 
     const itemSelect = async () => {
@@ -233,11 +279,22 @@ async function delayWithAbort(delayInMs, controller, message) {
       console.log("Create button clicked");
       await page.click('button[class*="Crafting_craftingButton"]');
       await delay(500);
-      console.log("Receive button clicked");
+      console.log("Create button double clicked");
       await page.click('button[class*="Crafting_craftingButton"]');
       await page.click("button[class^=Crafting_craftingCloseButton]");
-      await page.click("button[class^=InventoryWindow_closeBtn]");
       await delay(500);
+    } catch (error) {
+      await page.click("button[class^=Crafting_craftingCloseButton]");
+    }
+
+    try {
+      await page.waitForSelector(
+        "div[class*=InventoryWindow_inventoryContainer]",
+        {
+          timeout: 500,
+        }
+      );
+      await page.click("button[class^=InventoryWindow_closeBtn]");
     } catch (error) {}
   };
 
