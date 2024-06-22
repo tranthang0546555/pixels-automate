@@ -7,6 +7,27 @@ import puppeteer from "puppeteer-core";
 // Press " ` " key to open panel
 // Stop -> Spam -> Press Esc
 
+async function delayWithAbort(delayInMs, controller, message) {
+  try {
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        resolve();
+      }, delayInMs);
+
+      // If abort signal is received, clear the timeout and reject the promise
+      try {
+        controller.signal.addEventListener("abort", () => {
+          clearTimeout(timeoutId);
+          resolve("Delay aborted.");
+          console.log("Delay aborted::" + message);
+        });
+      } catch (error) {
+        resolve();
+      }
+    });
+  } catch (error) {}
+}
+
 (async () => {
   const path = `C:\\Users\\winn.tran\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application\\brave.exe`;
   const dir = `C:\\Users\\winn.tran\\AppData\\Local\\BraveSoftware\\Brave-Browser\\User Data`;
@@ -33,38 +54,13 @@ import puppeteer from "puppeteer-core";
 
   // Navigate the page to a URL
   await page.goto("https://play.pixels.xyz/");
-
-  const delay = async (time) => {
-    try {
-      return page.evaluate((delayTime) => {
-        return new Promise((resolve, reject) => {
-          const timeoutId = setTimeout(() => {
-            document.removeEventListener("keyup", onKeydown);
-            resolve();
-          }, delayTime);
-
-          const onKeydown = (event) => {
-            try {
-              if (event.key === "Escape") {
-                if (timeoutId) {
-                  clearTimeout(timeoutId);
-                  document.removeEventListener("keyup", onKeydown);
-                  reject();
-                  console.log("_______Abort delay timeout________");
-                }
-              }
-            } catch (error) {
-              console.error(error);
-            }
-          };
-          if (!timeoutId) {
-            document.addEventListener("keyup", onKeydown);
-          }
-        });
-      }, time);
-    } catch (error) {
-      console.error(error);
-    }
+  let controller = new AbortController();
+  const delayWithController = (time, _controller, message) => {
+    if (message) console.log("Delay::" + message);
+    return delayWithAbort(time, _controller, message);
+  };
+  const delay = (time) => {
+    return new Promise((resolve) => setTimeout(resolve, time));
   };
 
   // Wait and select world
@@ -85,7 +81,6 @@ import puppeteer from "puppeteer-core";
   console.log("Starting...");
   await delay(10000);
 
-  let controller = new AbortController();
   //   setMaxListeners(15, controller.signal);
 
   let auto = 10;
@@ -130,6 +125,8 @@ import puppeteer from "puppeteer-core";
       <div id="select-form" style="font-size: 15px; padding: 10px; background-color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
       <input type="radio" class="op" id="option1" name="options" value="1" onchange="document.myFunction(1)">
       <label for="option1">Cooking------</label><br>
+      <input type="radio" class="op" id="option2" name="options" value="2" onchange="document.myFunction(2)">
+      <label for="option2">Close------</label><br>
       </div>
       `;
       if (!element) container.insertAdjacentHTML("beforeend", html);
@@ -139,15 +136,18 @@ import puppeteer from "puppeteer-core";
   const cookAction = async () => {
     console.log("Cooking started ----------");
     for (let i = 1; i <= loop; i++) {
-      try {
-        await move();
-        await delay(1000);
-        await openStove(stove1);
-        await openStove(stove2);
-      } catch (error) {}
+      await move();
+      if (auto == 10) break;
+      await delay(1000);
+      if (auto == 10) break;
+      await openStove(stove1);
+      if (auto == 10) break;
+      await openStove(stove2);
+      if (auto == 10) break;
     }
     await back();
-    await delay(timeDelay);
+    // await delay(timeDelay);
+    await delayWithController(timeDelay, controller, "timeDelay:" + timeDelay);
   };
 
   const move = async () => {
@@ -169,7 +169,8 @@ import puppeteer from "puppeteer-core";
     await page.keyboard.up("s");
 
     await page.keyboard.down("a");
-    await delay(1500 * loop);
+    // await delay(1500 * loop);
+    await delayWithController(1500 * loop, controller, "Go back");
     await page.keyboard.up("a");
   };
 
@@ -202,7 +203,6 @@ import puppeteer from "puppeteer-core";
     });
     await page.waitForSelector('span[class^="Crafting_craftingFontText"]', {
       timeout: 5000,
-      signal: controller.signal,
     });
     await delay(500);
 
@@ -226,18 +226,19 @@ import puppeteer from "puppeteer-core";
         'button[class*="Crafting_craftingButton"]:not([disabled])',
         {
           timeout: 5000,
-          signal: controller.signal,
         }
       );
+
+      await delay(500);
+      console.log("Create button clicked");
+      await page.click('button[class*="Crafting_craftingButton"]');
+      await delay(500);
+      console.log("Receive button clicked");
+      await page.click('button[class*="Crafting_craftingButton"]');
+      await page.click("button[class^=Crafting_craftingCloseButton]");
+      await page.click("button[class^=InventoryWindow_closeBtn]");
+      await delay(500);
     } catch (error) {}
-    await delay(500);
-    console.log("Create button clicked");
-    await page.click('button[class*="Crafting_craftingButton"]');
-    await delay(500);
-    console.log("Receive button clicked");
-    await page.click('button[class*="Crafting_craftingButton"]');
-    await page.click("button[class^=Crafting_craftingCloseButton]");
-    await delay(500);
   };
 
   while (true) {
@@ -249,6 +250,9 @@ import puppeteer from "puppeteer-core";
           break;
         case 1:
           await cookAction();
+          break;
+        case 2:
+          await closeBoard();
           break;
         case 10:
           await closeBoard();
