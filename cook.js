@@ -284,7 +284,15 @@ async function delayWithAbort(delayInMs, controller, message) {
       await page.click("button[class^=Crafting_craftingCloseButton]");
       await delay(500);
     } catch (error) {
-      await page.click("button[class^=Crafting_craftingCloseButton]");
+      try {
+        await page.waitForSelector(
+          "button[class^=Crafting_craftingCloseButton]",
+          {
+            timeout: 5000,
+          }
+        );
+        await page.click("button[class^=Crafting_craftingCloseButton]");
+      } catch (error) {}
     }
 
     try {
