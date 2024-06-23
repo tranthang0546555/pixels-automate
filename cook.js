@@ -31,16 +31,17 @@ async function delayWithAbort(delayInMs, controller, message) {
 (async () => {
   const path = `C:\\Users\\winn.tran\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application\\brave.exe`;
   const dir = `C:\\Users\\winn.tran\\AppData\\Local\\BraveSoftware\\Brave-Browser\\User Data`;
-  const cakeName = `Blue Grumpkin Puree`;
+  const cakeName = `Grainbow Tart`;
   const profile = "Default";
   // const profile = "Profile 1";
   const stove1 = { x: 585, y: 335 };
   const stove2 = { x: 716, y: 354 };
   const self = { x: 610, y: 385 };
   const loop = 7; // 4 stove = 2 loop ex: 10 stove -> loop = 5
-  const timeDelay = 2 * 60 * 1000;
+  const timeDelay = 2.7 * 60 * 1000;
   const isFireAuto = true; // Wood num 3
   const isDrinkAuto = true; // Drink num 4
+  const minEn = 400;
 
   // Launch the browser and open a new blank page
   const browser = await puppeteer.launch({
@@ -162,12 +163,12 @@ async function delayWithAbort(delayInMs, controller, message) {
   };
 
   const drink = async () => {
-    const isLess = await page.evaluate(() => {
+    const isLess = await page.evaluate((min) => {
       const e = document.querySelector("span[class*=Hud_energytext]").innerHTML;
-      const r = Number(e || "") < 200;
+      const r = Number(e || "") < min;
       return Promise.resolve(r);
-    });
-    console.log("En < 200 :: ", isLess);
+    }, minEn);
+    console.log(`En < %${minEn} :: `, isLess);
     if (isLess) {
       await delay(1000);
       console.log("drink");
