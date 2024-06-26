@@ -7,41 +7,25 @@ import puppeteer from "puppeteer-core";
 // Press " ` " key to open panel
 // Stop -> Spam -> Press Esc
 
-async function delayWithAbort(delayInMs, controller, message) {
-  try {
-    return new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        resolve();
-      }, delayInMs);
+const path = `C:\\Users\\winn.tran\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application\\brave.exe`;
+const dir = `C:\\Users\\winn.tran\\AppData\\Local\\BraveSoftware\\Brave-Browser\\User Data`;
+const profile = "Default";
 
-      // If abort signal is received, clear the timeout and reject the promise
-      try {
-        controller.signal.addEventListener("abort", () => {
-          clearTimeout(timeoutId);
-          resolve("Delay aborted.");
-          console.log("Delay aborted::" + message);
-        });
-      } catch (error) {
-        resolve();
-      }
-    });
-  } catch (error) {}
-}
+const cakeName = `Popberry Pie`;
+const cookingTime = 4; // 4m
+
+const loop = 7; // 4 stove = 2 loop ex: 10 stove -> loop = 5
+const minEnToDink = 400;
+const minEnStopCooking = 100;
+
+const isFireAuto = true; // Wood num 3
+const isDrinkAuto = true; // Drink num 4
 
 (async () => {
-  const path = `C:\\Users\\winn.tran\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application\\brave.exe`;
-  const dir = `C:\\Users\\winn.tran\\AppData\\Local\\BraveSoftware\\Brave-Browser\\User Data`;
-  const cakeName = `Popberry Pie`;
-  const profile = "Default";
-  // const profile = "Profile 1";
+  const timeDelay = (cookingTime - 1.4) * 60 * 1000; // 4 - 1.5|6
   const stove1 = { x: 585, y: 335 };
   const stove2 = { x: 716, y: 354 };
   const self = { x: 610, y: 385 };
-  const loop = 7; // 4 stove = 2 loop ex: 10 stove -> loop = 5
-  const timeDelay = 2.5 * 60 * 1000; // 4 - 1.5|6
-  const isFireAuto = true; // Wood num 3
-  const isDrinkAuto = true; // Drink num 4
-  const minEn = 400;
 
   // Launch the browser and open a new blank page
   const browser = await puppeteer.launch({
@@ -167,8 +151,8 @@ async function delayWithAbort(delayInMs, controller, message) {
       const e = document.querySelector("span[class*=Hud_energytext]").innerHTML;
       const r = Number(e || "") < min;
       return Promise.resolve(r);
-    }, minEn);
-    console.log(`En < %${minEn} :: `, isLess);
+    }, minEnToDink);
+    console.log(`En < %${minEnToDink} :: `, isLess);
     if (isLess) {
       await delay(1000);
       console.log("drink");
@@ -268,7 +252,18 @@ async function delayWithAbort(delayInMs, controller, message) {
       }, cakeName);
     };
     await itemSelect();
+
     try {
+      const isLess = await page.evaluate((min) => {
+        const e = document.querySelector(
+          "span[class*=Hud_energytext]"
+        ).innerHTML;
+        const r = Number(e || "") < min;
+        return Promise.resolve(r);
+      }, minEnStopCooking);
+      console.log(`En < %${minEnStopCooking} :: `, isLess);
+      if (isLess) throw Error(`En < %${minEnStopCooking}`);
+
       await page.waitForSelector(
         'button[class*="Crafting_craftingButton"]:not([disabled])',
         {
@@ -329,6 +324,27 @@ async function delayWithAbort(delayInMs, controller, message) {
     } catch (error) {
       console.log("_____ Action: ACTION ABORTED", error);
     }
-    await delay(1000);
+    await delay(3000);
   }
 })();
+
+async function delayWithAbort(delayInMs, controller, message) {
+  try {
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        resolve();
+      }, delayInMs);
+
+      // If abort signal is received, clear the timeout and reject the promise
+      try {
+        controller.signal.addEventListener("abort", () => {
+          clearTimeout(timeoutId);
+          resolve("Delay aborted.");
+          console.log("Delay aborted::" + message);
+        });
+      } catch (error) {
+        resolve();
+      }
+    });
+  } catch (error) {}
+}
