@@ -15,10 +15,10 @@ const cakeName = `Glass`;
 const cookingTime = 1; // 4m
 
 const minEnToDink = 400;
-const minEnStopCooking = 50;
+const minEnStopCooking = 20;
 
 const isFireAuto = true; // Wood num 3
-const isDrinkAuto = false; // Drink num 4
+const isDrinkAuto = true; // Drink num 4
 const stones = [
   {
     x: 409, // Layer 1
