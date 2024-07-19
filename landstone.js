@@ -12,7 +12,7 @@ const dir = `C:\\Users\\trant\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Use
 const profile = "Default";
 
 const cakeName = `Marbleite Powder`;
-const cookingTime = 1.5; // 4m
+const cookingTime = 1.48; // 4m
 
 const minEnToDink = 400;
 const minEnStopCooking = 20;
@@ -22,7 +22,7 @@ const isDrinkAuto = true; // Drink num 4
 const stones = [
     {
         x: 357,
-        y: 363,
+        y: 350,
     },
     {
         x: 543,
@@ -178,6 +178,8 @@ const stones = [
             await page.keyboard.down("4");
             await page.keyboard.up("4");
             await delay(1000);
+            await page.mouse.click(self.x, self.y);
+            await delay(500);
             await page.mouse.click(self.x, self.y);
             await page.keyboard.down("4");
             await page.keyboard.up("4");
